@@ -38,17 +38,27 @@ static NSMutableDictionary *_cachedTypes;
     
     MJAssertParamNotNil(code);
     
-    if (code.length == 0) {
+    if ([code isEqualToString:MJTypeId]) {
+        _idType = YES;
+    } else if (code.length == 0) {
         _KVCDisabled = YES;
     } else if (code.length > 3 && [code hasPrefix:@"@\""]) {
         // 去掉@"和"，截取中间的类型名称
         _code = [code substringWithRange:NSMakeRange(2, code.length - 3)];
         _typeClass = NSClassFromString(_code);
         _fromFoundation = [MJFoundation isClassFromFoundation:_typeClass];
+        _numberType = (_typeClass == [NSNumber class] || [_typeClass isSubclassOfClass:[NSNumber class]]);
     } else if ([code isEqualToString:MJTypeSEL] ||
                [code isEqualToString:MJTypeIvar] ||
                [code isEqualToString:MJTypeMethod]) {
         _KVCDisabled = YES;
+    }
+    
+    // 是否为数字类型
+    NSString *lowerCode = _code.lowercaseString;
+    NSArray *numberTypes = @[MJTypeInt, MJTypeFloat, MJTypeDouble, MJTypeLong, MJTypeChar];
+    if ([numberTypes containsObject:lowerCode]) {
+        _numberType = YES;
     }
 }
 @end

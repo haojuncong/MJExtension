@@ -7,23 +7,36 @@
 //
 
 #import "NSObject+MJCoding.h"
-#import "NSObject+MJIvar.h"
-#import "MJIvar.h"
+#import "NSObject+MJProperty.h"
+#import "MJProperty.h"
 
 @implementation NSObject (MJCoding)
 
 - (void)encode:(NSCoder *)encoder
 {
-    [[self class] enumerateIvarsWithBlock:^(MJIvar *ivar, BOOL *stop) {
-        [encoder encodeObject:[ivar valueFromObject:self] forKey:ivar.name];
+    NSArray *ignoredCodingPropertyNames = [[self class] totalIgnoredCodingPropertyNames];
+    
+    [[self class] enumeratePropertiesWithBlock:^(MJProperty *property, BOOL *stop) {
+        // 检测是否被忽略
+        if ([ignoredCodingPropertyNames containsObject:property.name]) return;
+        
+        id value = [property valueFromObject:self];
+        if (value == nil) return;
+        [encoder encodeObject:value forKey:property.name];
     }];
 }
 
 - (void)decode:(NSCoder *)decoder
 {
-    [[self class] enumerateIvarsWithBlock:^(MJIvar *ivar, BOOL *stop) {
-        id value = [decoder decodeObjectForKey:ivar.name];
-        [ivar setValue:value forObject:self];
+    NSArray *ignoredCodingPropertyNames = [[self class] totalIgnoredCodingPropertyNames];
+    
+    [[self class] enumeratePropertiesWithBlock:^(MJProperty *property, BOOL *stop) {
+        // 检测是否被忽略
+        if ([ignoredCodingPropertyNames containsObject:property.name]) return;
+        
+        id value = [decoder decodeObjectForKey:property.name];
+        if (value == nil) return;
+        [property setValue:value forObject:self];
     }];
 }
 @end

@@ -26,18 +26,25 @@
 #import "Student.h"
 #import "StatusResult.h"
 #import "Bag.h"
+#import <CoreData/CoreData.h>
 
 /** main函数 */
 int main(int argc, const char * argv[])
 {
     @autoreleasepool {
+        // 关于模型的具体配置可以参考：MJExtensionConfig.m
+        // 或者参考每个模型的.m文件中被注释掉的配置
+        
         execute(keyValues2object, @"简单的字典 -> 模型");
+        execute(keyValues2object1, @"JSON字符串 -> 模型");
         execute(keyValues2object2, @"复杂的字典 -> 模型 (模型里面包含了模型)");
         execute(keyValues2object3, @"复杂的字典 -> 模型 (模型的数组属性里面又装着模型)");
         execute(keyValues2object4, @"简单的字典 -> 模型（key替换，比如ID和id，支持多级映射）");
         execute(keyValuesArray2objectArray, @"字典数组 -> 模型数组");
         execute(object2keyValues, @"模型转字典");
         execute(objectArray2keyValuesArray, @"模型数组 -> 字典数组");
+        execute(coreData, @"CoreData示例");
+        execute(coding, @"NSCoding示例");
     }
     return 0;
 }
@@ -51,17 +58,35 @@ void keyValues2object()
     NSDictionary *dict = @{
                            @"name" : @"Jack",
                            @"icon" : @"lufy.png",
-                           @"age" : @20,
+                           @"age" : @"20",
                            @"height" : @1.55,
                            @"money" : @"100.9",
-                           @"sex" : @(SexFemale)
+                           @"sex" : @(SexFemale),
+//                           @"gay" : @"1"
+//                           @"gay" : @"NO"
+                           @"gay" : @"true"
                            };
 
     // 2.将字典转为User模型
     User *user = [User objectWithKeyValues:dict];
 
     // 3.打印User模型的属性
-    NSLog(@"name=%@, icon=%@, age=%d, height=%@, money=%@, sex=%d", user.name, user.icon, user.age, user.height, user.money, user.sex);
+    NSLog(@"name=%@, icon=%@, age=%zd, height=%@, money=%@, sex=%d, gay=%d", user.name, user.icon, user.age, user.height, user.money, user.sex, user.gay);
+}
+
+/**
+ *  JSON字符串 -> 模型
+ */
+void keyValues2object1()
+{
+    // 1.定义一个JSON字符串
+    NSString *jsonString = @"{\"name\":\"Jack\", \"icon\":\"lufy.png\", \"age\":20}";
+
+    // 2.将JSON字符串转为User模型
+    User *user = [User objectWithKeyValues:jsonString];
+
+    // 3.打印User模型的属性
+    NSLog(@"name=%@, icon=%@, age=%d", user.name, user.icon, user.age);
 }
 
 /**
@@ -283,6 +308,52 @@ void objectArray2keyValuesArray()
     // 2.将模型数组转为字典数组
     NSArray *dictArray = [User keyValuesArrayWithObjectArray:userArray];
     NSLog(@"%@", dictArray);
+}
+
+/**
+ *  CoreData示例
+ */
+void coreData()
+{
+    @try {
+        NSDictionary *dict = @{
+                               @"name" : @"Jack",
+                               @"icon" : @"lufy.png",
+                               @"age" : @20,
+                               @"height" : @1.55,
+                               @"money" : @"100.9",
+                               @"sex" : @(SexFemale),
+                               @"gay" : @"true"
+                               };
+
+        // 这个Demo仅仅提供思路，具体的方法参数需要自己创建
+        NSManagedObjectContext *context = nil;
+        User *user = [User objectWithKeyValues:dict context:context];
+
+        // 利用CoreData保存模型
+        [context save:nil];
+    } @catch (NSException *e) {
+    
+    }
+}
+
+/**
+ * NSCoding示例
+ */
+void coding()
+{
+    // 创建模型
+    Bag *bag = [[Bag alloc] init];
+    bag.name = @"Red bag";
+    bag.price = 200.8;
+
+    NSString *file = [NSHomeDirectory() stringByAppendingPathComponent:@"Desktop/bag.data"];
+    // 归档
+    [NSKeyedArchiver archiveRootObject:bag toFile:file];
+
+    // 解档
+    Bag *decodedBag = [NSKeyedUnarchiver unarchiveObjectWithFile:file];
+    NSLog(@"name=%@, price=%f", decodedBag.name, decodedBag.price);
 }
 
 void execute(void (*fn)(), NSString *comment)
